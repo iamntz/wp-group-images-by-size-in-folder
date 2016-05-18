@@ -4,11 +4,11 @@
 Plugin Name: Image sizes in custom folder
 Description: Put all resized images into separate folders (instad of throwing everything into wp-content/uploads)
 Author: Ionuț Staicu
-Version: 1.0.1
+Version: 1.0.2
 Author URI: http://ionutstaicu.com
  */
 
-// based on Robbert code: http://wordpress.stackexchange.com/a/126369/223
+// based on Robbert's code: http://wordpress.stackexchange.com/a/126369/223
 
 if (!defined('ABSPATH')) {
 	exit;
@@ -20,14 +20,15 @@ add_filter("wp_image_editors", function ($editors) {
 	return $editors;
 });
 
-
 require_once ABSPATH . WPINC . "/class-wp-image-editor.php";
 require_once ABSPATH . WPINC . "/class-wp-image-editor-gd.php";
 require_once ABSPATH . WPINC . "/class-wp-image-editor-imagick.php";
 
+define('IMAGE_SIZE_CUSTOM_FOLDER', 'resized/');
+
 abstract class WP_Image_Editor_Custom_Abstract extends WP_Image_Editor_GD
 {
-	protected $baseFolderName = 'resized/';
+	protected $baseFolderName = IMAGE_SIZE_CUSTOM_FOLDER;
 
 	public function generate_filename($prefix = null, $dest_path = null, $extension = null)
 	{
@@ -56,18 +57,14 @@ abstract class WP_Image_Editor_Custom_Abstract extends WP_Image_Editor_GD
 		// Return our new prefixed filename.
 		return trailingslashit($dir) . "{$this->baseFolderName}{$prefix}/{$name}.{$new_ext}";
 	}
-
-	public function multi_resize($sizes)
-	{
-		$sizes = parent::multi_resize($sizes);
-
-		foreach ($sizes as $slug => $data) {
-			$sizes[$slug]['file'] = $this->baseFolderName . $data['width'] . "x" . $data['height'] . "/" . $data['file'];
-		}
-
-		return $sizes;
-	}
 }
+
+add_filter('wp_update_attachment_metadata', function ($data, $postID) {
+	foreach ( $data['sizes'] as $slug => $values ) {
+		$data['sizes'][$slug]['file'] = IMAGE_SIZE_CUSTOM_FOLDER . $values['width'] . "x" . $values['height'] . "/" . $values['file'];
+	}
+	return $data;
+});
 
 class WP_Image_Editor_Custom_Imagick extends WP_Image_Editor_Custom_Abstract
 {}
