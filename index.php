@@ -4,7 +4,7 @@
 Plugin Name: Image sizes in custom folder
 Description: Put all resized images into separate folders (instad of throwing everything into wp-content/uploads)
 Author: Ionuț Staicu
-Version: 1.0.2
+Version: 1.0.3
 Author URI: http://ionutstaicu.com
  */
 
@@ -61,7 +61,9 @@ abstract class WP_Image_Editor_Custom_Abstract extends WP_Image_Editor_GD
 
 add_filter('wp_update_attachment_metadata', function ($data, $postID) {
 	foreach ( $data['sizes'] as $slug => $values ) {
-		$data['sizes'][$slug]['file'] = IMAGE_SIZE_CUSTOM_FOLDER . $values['width'] . "x" . $values['height'] . "/" . $values['file'];
+		$newPath = IMAGE_SIZE_CUSTOM_FOLDER . $values['width'] . "x" . $values['height'] . "/";
+		$pattern = sprintf("/(%s){2,}/", str_replace('/', '\/', $newPath));
+		$data['sizes'][$slug]['file'] = $newPath  . preg_replace($pattern, '', $values['file']);
 	}
 	return $data;
 });
